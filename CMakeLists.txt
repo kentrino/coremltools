@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.0.0)
 
 set(CMAKE_OSX_ARCHITECTURES x86_64)
 
+set(PYTHON_EXECUTABLE $ENV{PYTHON_EXECUTABLE})
+set(PYTHON python)
+set(PYTHON_CONFIG python-config)
+
 project(coremltools)
 
 find_program(HAS_CCACHE ccache)
