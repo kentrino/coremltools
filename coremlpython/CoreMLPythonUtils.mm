@@ -1,6 +1,7 @@
 #import "CoreMLPythonArray.h"
 #import "CoreMLPythonUtils.h"
 
+#include <iostream>
 #include <pybind11/eval.h>
 #include <pybind11/numpy.h>
 
@@ -13,6 +14,8 @@
 #endif
 
 using namespace CoreML::Python;
+using std::cout;
+using std::endl;
 
 NSURL * Utils::stringToNSURL(const std::string& str) {
     NSString *nsstr = [NSString stringWithUTF8String:str.c_str()];
@@ -144,6 +147,7 @@ static MLFeatureValue * convertValueToArray(const py::handle& handle) {
     // if this line throws, it can't be an array (caller should catch)
     py::array buf = handle.cast<py::array>();
     if (buf.shape() == nullptr) {
+        cout << "no shape" << endl;
         throw std::runtime_error("no shape, can't be an array");
     }
     PybindCompatibleArray *array = [[PybindCompatibleArray alloc] initWithArray:buf];
@@ -345,6 +349,7 @@ MLFeatureValue * Utils::convertValueToObjC(const py::handle& handle) {
     if(PyList_Check(handle.ptr()) || PyTuple_Check(handle.ptr())
        || PyObject_CheckBuffer(handle.ptr())) {
         try {
+            cout << "buffer detected" << endl;
             return convertValueToArray(handle);
         } catch(...) {}
     }
@@ -388,10 +393,37 @@ static size_t sizeOfArrayElement(MLMultiArrayDataType type) {
     }
 }
 
+void show(MLMultiArray *value) {
+    cout << "------------------------------------------ show features" << endl;
+    NSArray *shape = [value shape];
+    int channel = 3;
+    int width = [shape[1] intValue];
+    int height = [shape[2] intValue];
+    // 4, 245, 439
+    NSLog(@"%@, %@, %@", shape[0], shape[1], shape[2]);
+    // doubleなんだわ
+    cout << "dataType:" << [value dataType] << endl;
+    
+    for (int h = 0; h < 2; ++h) {
+        for (int w = 0; w < 2; ++w) {
+            NSNumber* nsW = [NSNumber numberWithInt:w];
+            NSNumber* nsH = [NSNumber numberWithInt:h];
+            NSArray *c0 = @[@0, nsH, nsW];
+            NSNumber* nsValueC0 = [value objectForKeyedSubscript:c0];
+            NSArray *c1 = @[@1, nsH, nsW];
+            NSNumber* nsValueC1 = [value objectForKeyedSubscript:c1];
+            NSLog(@"[%d, %d] %@, %@", h, w, nsValueC0, nsValueC1);
+        }
+    }
+}
+
 py::object Utils::convertArrayValueToPython(MLMultiArray *value) {
     if (value == nil) {
         return py::none();
     }
+
+    // show(value);
+
     MLMultiArrayDataType type = value.dataType;
     std::vector<size_t> shape = Utils::convertNSArrayToCpp(value.shape);
     std::vector<size_t> strides = Utils::convertNSArrayToCpp(value.strides);

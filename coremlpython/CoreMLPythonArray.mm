@@ -1,4 +1,8 @@
+#include <iostream>
 #import "CoreMLPythonArray.h"
+
+using std::cout;
+using std::endl;
 
 @implementation PybindCompatibleArray
 
@@ -6,7 +10,7 @@
     const auto& dt = array.dtype();
     char kind = dt.kind();
     size_t itemsize = dt.itemsize();
-    
+    cout << "itemsize: " << itemsize << ", kind: " << kind << endl;
     if(kind == 'i' && itemsize == 4) {
         return MLMultiArrayDataTypeInt32;
     } else if(kind == 'f' && itemsize == 4) {
@@ -38,6 +42,32 @@
     return ret;
 }
 
+- (void) show {
+    NSArray *shape = [self shape];
+    int channel = 3;
+    int width = [shape[1] intValue];
+    int height = [shape[2] intValue];
+    // 3, 500, 888
+    NSLog(@"%@, %@, %@", shape[0], shape[1], shape[2]);
+    // 3 * 500 * 888
+    cout << "count:" << [self count] << endl;
+    cout << "dataType:" << [self dataType] << endl;
+
+    for (int h = 0; h < 2; ++h) {
+        for (int w = 0; w < 2; ++w) {
+            NSNumber* nsW = [NSNumber numberWithInt:w];
+            NSNumber* nsH = [NSNumber numberWithInt:h];
+            NSArray *c0 = @[@0, nsH, nsW];
+            NSNumber* nsValueC0 = [self objectForKeyedSubscript:c0];
+            NSArray *c1 = @[@1, nsH, nsW];
+            NSNumber* nsValueC1 = [self objectForKeyedSubscript:c1];
+            NSArray *c2 = @[@2, nsH, nsW];
+            NSNumber* nsValueC2 = [self objectForKeyedSubscript:c2];
+            NSLog(@"[%d, %d] %@, %@, %@", h, w, nsValueC0, nsValueC1, nsValueC2);
+        }
+    }
+}
+
 - (PybindCompatibleArray *)initWithArray:(py::array)array {
 
     self = [super initWithDataPointer:array.mutable_data()
@@ -46,6 +76,7 @@
                               strides:[self.class stridesOf:array]
                           deallocator:nil
                                 error:nil];
+    // [self show];
 
     if (self) {
         m_array = array;
