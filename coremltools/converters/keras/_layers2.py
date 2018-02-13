@@ -277,8 +277,9 @@ def convert_convolution(builder, layer, input_names, output_names, keras_layer):
         W = weightList[0].transpose([0,1,3,2])
         output_shape = output_blob_shape[:-1]
     else: 
+        transposed = _np.transpose(weightList[0], [1, 2, 0, 3])
         height, width, channels, n_filters = weightList[0].shape
-        W = weightList[0]
+        W = transposed
         output_shape = None
     b = weightList[1] if has_bias else None
 
